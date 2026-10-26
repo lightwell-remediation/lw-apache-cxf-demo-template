@@ -1,0 +1,69 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0
+                              https://maven.apache.org/xsd/settings-1.2.0.xsd">
+
+    <!--
+      Red Hat Lightwell Network Maven configuration.
+      Use: mvn -s settings.xml <goal>
+      Environment: LW_USERNAME, LW_PASSWORD and LW_MAVEN_REPO_URL, the URL of
+      the Lightwell remediated repository (see README.md).
+
+      Two repositories, one profile, Central first.
+
+      Maven queries the repositories from a settings.xml profile before the
+      Super POM, which is where `central` lives, and among profiles the last
+      one declared is tried first:
+      https://maven.apache.org/guides/mini/guide-multiple-repositories.html
+      Declaring `central` first means ordinary artifacts are answered by
+      Central without a round trip to Lightwell; on a cold resolve of this
+      project that took the build from minutes to seconds.
+
+      Central first cannot shadow a Lightwell rebuild: a rebuild carries a
+      version string Central does not publish, so Central answers 404 and
+      resolution falls through to the Lightwell repository.
+    -->
+
+    <servers>
+        <server>
+            <id>lightwell-remediated</id>
+            <username>${env.LW_USERNAME}</username>
+            <password>${env.LW_PASSWORD}</password>
+        </server>
+    </servers>
+
+    <profiles>
+        <profile>
+            <id>lightwell</id>
+            <repositories>
+                <repository>
+                    <id>central</id>
+                    <name>Maven Central</name>
+                    <url>https://repo.maven.apache.org/maven2</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </repository>
+                <repository>
+                    <id>lightwell-remediated</id>
+                    <name>Red Hat Lightwell Network - Remediated</name>
+                    <url>${env.LW_MAVEN_REPO_URL}</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+        </profile>
+    </profiles>
+
+    <activeProfiles>
+        <activeProfile>lightwell</activeProfile>
+    </activeProfiles>
+
+</settings>
